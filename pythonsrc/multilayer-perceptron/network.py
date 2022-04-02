@@ -14,19 +14,16 @@ class Node:
         self.is_io = is_io
         self.val = 0
 
-        if is_io:
-            self.weight = random.randint(0, 1)
-            self.parents = parent_nodes
-        else:
-            self.parents = parent_nodes
-            self.bias = random.randint(0, 1)
-            self.weight = random.randint(0, 1)
+        self.weight = random.randint(0, 1)
+        self.parents = parent_nodes
+        self.bias = random.randint(0, 1)
+        self.weight = random.randint(0, 1)
 
     def eval_value(self):
         # get value from other parent nodes:
         output = 0
         for i in self.parents:
-            output += i.weight * i.number
+            output += i.weight * i.val
 
         output -= self.bias
 
@@ -63,3 +60,20 @@ class MultilayerPerceptronNetwork:
 
         self.network = output_network
         self.layers = layers
+
+    def run(self, args):
+        if len(self.network[0]) != len(args):
+            raise ValueError("there are too many or too less arguments for input nodes given.")
+
+        counter = 0
+        counter2 = 0
+        for i in self.network:
+            for j in i:
+                if counter == 0:
+                    j.assign_value(args[counter2])
+                else:
+                    j.eval_value()
+                counter2 += 1
+            counter += 1
+
+        return self.network[len(self.network) - 1][0].eval_value()
