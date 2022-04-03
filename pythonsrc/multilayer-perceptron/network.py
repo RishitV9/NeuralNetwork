@@ -8,29 +8,54 @@ def sigmoid(x):
 
 
 class Node:
-    def __init__(self, parent_nodes=None, is_io=False):
+    def __init__(self, parent_nodes=None, is_io=False, bias=0.0, weight_headers=None):
+
+        """
+
+        :param parent_nodes: list
+        :param is_io: bool
+        :param bias: float
+        :param weight_headers: list
+        """
+
         if parent_nodes is None:
             parent_nodes = []
 
         self.is_io = is_io
-        self.val = 0
+        self.val = 0.0
 
         if is_io:
             self.parents = parent_nodes
-            self.bias = 0
+            self.bias = 0.0
             self.weights = {}
-            for i in parent_nodes:
-                self.weights[i] = random.random()
+            if weight_headers is None:
+                for i in parent_nodes:
+                    self.weights[i] = random.random()
+            else:
+                counter = 0
+                for i in parent_nodes:
+                    self.weights[i] = weight_headers[counter]
+                    counter += 1
         else:
             self.parents = parent_nodes
-            self.bias = random.random()
+            if bias == 0.0:
+                self.bias = random.random()
+            else:
+                self.bias = bias
+
             self.weights = {}
-            for i in parent_nodes:
-                self.weights[i] = random.random()
+            if weight_headers is None:
+                for i in parent_nodes:
+                    self.weights[i] = random.random()
+            else:
+                counter = 0
+                for i in parent_nodes:
+                    self.weights[i] = weight_headers[counter]
+                    counter += 1
 
     def eval_value(self):
         # get value from other parent nodes:
-        output = 0
+        output = 0.0
         for i in self.parents:
             output += self.weights[i] * i.val
 
@@ -71,10 +96,35 @@ class MultilayerPerceptronNetwork:
             self.layers = layers
             self.computation_duration = None
         else:
+            network = []
+            counter = 0
+            layer = []
             with open(f'{location}export.txt', 'r') as file:
                 for i in file.readlines():
                     data = i.split()
-                    print(data)
+                    if float(data[0]) <= 1.0:
+                        for j in layer:
+                            one_layer = []
+                            for c in range(j):
+                                bias = float(data[0])
+                                is_io = bool(data[len(data) - 1])
+                                if len(data) >= 3:
+                                    weight_headers = data[1:(len(data) - 2)]
+                                    if counter == 0:
+                                        one_layer.append(Node(is_io=is_io, bias=bias, weight_headers=weight_headers))
+                                    else:
+                                        parents = network[counter - 1]
+                                        one_layer.append(Node(is_io=is_io, bias=bias, weight_headers=weight_headers, parent_nodes=parents))
+                            counter += 1
+                            network.append(one_layer)
+                    else:
+                        for j in data:
+                            layer.append(int(j))
+
+                file.close()
+            self.network = network
+            self.layers = layers
+            self.computation_duration = None
 
     def run(self, args):
         if len(self.network[0]) != len(args):
@@ -101,14 +151,19 @@ class MultilayerPerceptronNetwork:
     def export_network(self, location=""):
         with open(f"{location}export.txt", "w") as file:
             data = ''
+            for i in self.layers:
+                data += str(i) + " "
+
+            data += "\n"
+
             for i in self.network:
                 for j in i:
                     weights = ""
 
                     for c in j.weights:
-                        weights += str(j.weights[c])
+                        weights += str(j.weights[c]) + " "
 
-                    data += f"{j.bias} {weights} {j.is_io}\n"
+                    data += f"{j.bias} {weights}{j.is_io}\n"
 
             file.write(data)
             file.close()
