@@ -18,24 +18,12 @@ class Node:
         :param weight_headers: list
         """
 
-        if parent_nodes is None:
-            parent_nodes = []
-
         self.is_io = is_io
         self.val = 0.0
 
         if is_io:
             self.parents = parent_nodes
             self.bias = 0.0
-            self.weights = {}
-            if weight_headers is None:
-                for i in parent_nodes:
-                    self.weights[i] = random.random()
-            else:
-                counter = 0
-                for i in parent_nodes:
-                    self.weights[i] = weight_headers[counter]
-                    counter += 1
         else:
             self.parents = parent_nodes
             if bias == 0.0:
@@ -43,15 +31,30 @@ class Node:
             else:
                 self.bias = bias
 
-            self.weights = {}
-            if weight_headers is None:
-                for i in parent_nodes:
-                    self.weights[i] = random.random()
-            else:
-                counter = 0
-                for i in parent_nodes:
+
+        self.weights = {}
+        if weight_headers is None:
+            parents = []
+
+            if parent_nodes is not None:
+                parents += parent_nodes
+
+            for i in parents:
+                self.weights[i] = random.random()
+        else:
+            parents = []
+
+            if parent_nodes is not None:
+                parents += parent_nodes
+
+            counter = 0
+            for i in parents:
+                try:
                     self.weights[i] = weight_headers[counter]
-                    counter += 1
+                except:
+                    pass
+
+                counter += 1
 
     def eval_value(self):
         # get value from other parent nodes:
@@ -72,7 +75,8 @@ class Node:
 
 class MultilayerPerceptronNetwork:
     def __init__(self, layers=None, location=""):
-        if layers is not None:
+        
+        if location == "":
             # create network:
             output_network = []
             counter = 0
@@ -96,35 +100,30 @@ class MultilayerPerceptronNetwork:
             self.layers = layers
             self.computation_duration = None
         else:
+            if layers is None:
+                raise ValueError("Layers information is not provided.")
+
             network = []
             counter = 0
-            layer = []
             with open(f'{location}export.txt', 'r') as file:
-                for i in file.readlines():
-                    data = i.split()
-                    if float(data[0]) <= 1.0:
-                        for j in layer:
-                            one_layer = []
-                            for c in range(j):
-                                bias = float(data[0])
-                                is_io = bool(data[len(data) - 1])
-                                if len(data) >= 3:
-                                    weight_headers = data[1:(len(data) - 2)]
-                                    if counter == 0:
-                                        one_layer.append(Node(is_io=is_io, bias=bias, weight_headers=weight_headers))
-                                    else:
-                                        parents = network[counter - 1]
-                                        one_layer.append(Node(is_io=is_io, bias=bias, weight_headers=weight_headers, parent_nodes=parents))
-                            counter += 1
-                            network.append(one_layer)
-                    else:
-                        for j in data:
-                            layer.append(int(j))
+                data = file.readlines()
+                for i in layer:
+                    each_layer = []
+                    for j in range(i):
+                        # append the node to each_layer:
+                        if "True" in data:
+                            is_io = True
+                        else:
+                            is_io = False
+                        
+                        bias = float(data[counter].split()[0]
+                        weights = {}
+                        other_data = data[counter].split().pop(0).pop(len(data[counter] - 1))
 
-                file.close()
-            self.network = network
-            self.layers = layers
-            self.computation_duration = None
+                        # for i in other_data:
+                            # 
+
+                    network.append(each_layer)
 
     def run(self, args):
         if len(self.network[0]) != len(args):
@@ -151,10 +150,6 @@ class MultilayerPerceptronNetwork:
     def export_network(self, location=""):
         with open(f"{location}export.txt", "w") as file:
             data = ''
-            for i in self.layers:
-                data += str(i) + " "
-
-            data += "\n"
 
             for i in self.network:
                 for j in i:
